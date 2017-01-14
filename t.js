@@ -8,6 +8,8 @@ var chunk = '<%for {{e}}%>'+
     '</div>'+
     '<%endfor%>';
 
+var easy = "Hi <%if {{a}}%>b<%endif%>";
+
 var maphrase = 	"Bonjour jeune chevalier {{name}} "+
     "Bienvenue dans la quete du {{boss}} \n" +
     "Pour triompher tu devras faire \n" +
@@ -48,77 +50,82 @@ var balezbis =
 var balez =
     "<html>" +
     "<%if {{head}}%>" +
-        "<head><style></style></head>" +
+    "<head><style></style></head>" +
     "<%endif%>" +
     "<body>" +
     "<%if {{header}}%>" +
-        "<header><nav><ul>" +
-        "<%for {{itemmenu}}%>" +
-            "<li>{{title}} " +
-                "<%if {{meta}}%>" +
-                    "meta=\"{{meta}}\"" +
-                "<%endif%>" +
-            "</li>" +
-            "<%for {{ol}}%>" +
-                "<ol>" +
-                "<%if {{jl}}%>" +
-                    "{{content}}" +
-                "<%endif%>" +
-                "</ol>" +
-            "<%endfor%>" +
-            " Mon beau palace "+
-            "<%for {{jeankaka}}%>"+
-                "<span>fjejfi</span>"+
-            "<%endfor%>"+
-        "<%endfor%>" +
-        "</ul></nav></header>" +
-        "<%endif%>" +
+    "<header><nav><ul>" +
+    "<%for {{itemmenu}}%>" +
+    "<li>{{title}} " +
+    "<%if {{meta}}%>" +
+    "meta=\"{{meta}}\"" +
+    "<%endif%>" +
+    "</li>" +
+    "<%for {{ol}}%>" +
+    "<ol>" +
+    "<%if {{jl}}%>" +
+    "{{content}}" +
+    "<%endif%>" +
+    "</ol>" +
+    "<%endfor%>" +
+    " Mon beau palace "+
+    "<%for {{jeankaka}}%>"+
+    "<span>fjejfi</span>"+
+    "<%endfor%>"+
+    "<%endfor%>" +
+    "</ul></nav></header>" +
+    "<%endif%>" +
     "</body></html>";
 
-var lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus semper velit quis lorem pulvinar, sed consequat orci pellentesque. Etiam tincidunt " +
+var lorem = "Lorem {{val}} ipsum dolor sit amet, consectetur adipiscing elit. Phasellus semper velit quis lorem pulvinar, sed consequat orci pellentesque. Etiam tincidunt " +
     "<%for {{nzdz}}%>" +
-        "id elit in " +
-        "<%if {{ffef}}%>" +
-            "fringilla. Donec" +
-        "<%endif%>" +
-        " vitae " +
-        "<%for {{dand}}%>" +
-            "accumsan nisi, in" +
-        "<%endfor%>" +
-        " tincidunt arcu." +
+    "id elit in " +
+    "<%if {{ffef}}%>" +
+    "fringilla. Donec" +
+    "<%endif%>" +
+    " vitae " +
+    "<%for {{dand}}%>" +
+    "accumsan nisi, in" +
+    "<%endfor%>" +
+    " tincidunt arcu." +
     "<%endfor%>" +
     " Pellentesque " +
     "<%for {{fefe}}%>" +
-        "bibendum erat " +
-            "<%for {{ffeef}}%>" +
-                "at" +
-            "<%endfor%> " +
-            "<%for {{fefefef}}%>" +
-                "risus" +
-            "<%endfor%> " +
+    "bibendum erat " +
+    "<%for {{ffeef}}%>" +
+    "at" +
+    "<%endfor%> " +
+    "<%for {{fefefef}}%>" +
+    "risus" +
+    "<%endfor%> " +
     "<%endfor%>" +
     "maximus consectetur id eu lacus. Aenean tincidunt iaculis diam vitae malesuada. " +
     "<%for {{fefe2}}%>" +
-        "bibendum erat " +
-        "<%for {{ffeef2}}%>" +
-            "at" +
-        "<%endfor%> " +
-        "<%for {{fefefef2}}%>" +
-            "risus" +
-        "<%endfor%> " +
+    "bibendum erat " +
+    "<%for {{ffeef2}}%>" +
+    "at" +
+    "<%endfor%> " +
+    "<%for {{fefefef2}}%>" +
+    "risus" +
+    "<%endfor%> " +
     "<%endfor%>" +
     "Suspendisse accumsan facilisis arcu quis sagittis. Integer in risus ligula. Vestibulum est mauris, pretium eu tortor eleifend, elementum mollis nulla. Vivamus neque nulla, commodo et massa a, hendrerit maximus mi. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Integer eros mi, " +
     "<%if {{name}}%>" +
-        "maximus " +
-        "<%for {{drake}}%>" +
-            "id eleifend vel" +
-        "<%endfor%>" +
-        ", rutrum nec elit." +
+    "maximus " +
+    "<%for {{drake}}%>" +
+    "id eleifend vel" +
+    "<%endfor%>" +
+    ", rutrum nec elit." +
     "<%endif%>" +
-    " Quisque ut magna sapien"
+    " Quisque ut magna sapien";
 
 
-function evaluate(tpl){
+
+var nuzzle = function(){
+    this.cached = {};
+};
+
+nuzzle.prototype.evaluate = function(exp) {
     var stack = [];
     var matches = [];
     var termReg = /<%(\w+) *(?:{{(.?\w+)}})?%>/gi;
@@ -126,60 +133,30 @@ function evaluate(tpl){
         stack.length?(matches[1].match(/end/i)?(stack[stack.length-1]==matches[1].replace('end','')?stack.pop():null):stack.push(matches[1])):stack.push(matches[1]);
     }
     return stack.length == 0;
-}
+};
 
-function getNodeObject(raw){
+nuzzle.prototype.getNodeObject = function(raw) {
     return {
         type:raw[1].toLowerCase(),
         variable:raw[3],
+        context: {
+            eval: '',
+            variables: []
+        },
         symbol:raw[2],
         delimiters:[raw[0]],
         indexs:[raw.index],
+        exp_length:'',
         childs: [],
-        content: '',
         expression : '',
+        content: '',
         result: this.content
     };
-}
+};
 
-function getNodeTree(tpl){
-    //c = current node, e = stacked element
+nuzzle.prototype.getExpressionNodeTree = function(tpl){
     if(!evaluate(tpl)) return false;
-    var match, c, e, stack = [], nodes = [];
-    var reg = /<%(\w+) *(?:{{(\W)?(\w+)}})? *(?:(\w+) *{{(\w+)}})?%>/g;
-    while(match = reg.exec(tpl)){
-        c = getNodeObject(match);
-        if(c.type.search('end') == -1) stack.push(c);
-        else{
-            e = stack.pop();
-            if(e.type == c.type.replace('end','')){
-                //finissage du balisage
-                e.delimiters.push(c.delimiters[0]);
-                e.indexs.push(c.indexs[0]+e.delimiters[1].length);
-                //creation du contenu
-                e.expression = tpl.substring(e.indexs[0],e.indexs[1]);
-                e.content = e.expression.substring(e.delimiters[0].length,e.expression.length-e.delimiters[1].length);
-                //node complete a partir d'ici
-                if(stack.length) stack[stack.length-1].childs.push(e);
-                else nodes.push(e);
-            }
-        }
-    }
-
-    var nodeTree = {
-        type:'root',
-        expression:tpl,
-        content: tpl,
-        childs: nodes,
-        indexs:[0,tpl.length]
-    };
-
-    return nodeTree;
-}
-
-function getWholeNodeTree(tpl){
     var match, c, e, stack = [], nodes = [], lastpos = 0;
-    nodes.push(this.getNodeObject(tpl,'root'));
     var reg = /<%(\w+) *(?:{{(\W)?(\w+)}})?%>/g;
     while(match = reg.exec(tpl)){
 
@@ -234,6 +211,72 @@ function getWholeNodeTree(tpl){
     return nodeTree;
 }
 
+
+
+nuzzle.prototype.getExpressionNodeTreeWithVars = function(expNodeTree,vars){
+
+}
+
+
+function evaluate(tpl){
+    var stack = [];
+    var matches = [];
+    var termReg = /<%(\w+) *(?:{{(.?\w+)}})?%>/gi;
+    while (matches = termReg.exec(tpl)) {
+        stack.length?(matches[1].match(/end/i)?(stack[stack.length-1]==matches[1].replace('end','')?stack.pop():null):stack.push(matches[1])):stack.push(matches[1]);
+    }
+    return stack.length == 0;
+}
+
+function getNodeObject(raw){
+    return {
+        type:raw[1].toLowerCase(),
+        variable:raw[3],
+        symbol:raw[2],
+        delimiters:[raw[0]],
+        indexs:[raw.index],
+        childs: [],
+        content: '',
+        expression : '',
+        result: this.content
+    };
+}
+
+function getNodeTree(tpl){
+    //c = current node, e = stacked element
+    if(!evaluate(tpl)) return false;
+    var match, c, e, stack = [], nodes = [];
+    var reg = /<%(\w+) *(?:{{(\W)?(\w+)}})?%>/g;
+    while(match = reg.exec(tpl)){
+        c = getNodeObject(match);
+        if(c.type.search('end') == -1) stack.push(c);
+        else{
+            e = stack.pop();
+            if(e.type == c.type.replace('end','')){
+                //finissage du balisage
+                e.delimiters.push(c.delimiters[0]);
+                e.indexs.push(c.indexs[0]+e.delimiters[1].length);
+                //creation du contenu
+                e.expression = tpl.substring(e.indexs[0],e.indexs[1]);
+                e.content = e.expression.substring(e.delimiters[0].length,e.expression.length-e.delimiters[1].length);
+                //node complete a partir d'ici
+                if(stack.length) stack[stack.length-1].childs.push(e);
+                else nodes.push(e);
+            }
+        }
+    }
+
+    var nodeTree = {
+        type:'root',
+        expression:tpl,
+        content: tpl,
+        childs: nodes,
+        indexs:[0,tpl.length]
+    };
+
+    return nodeTree;
+}
+
 function getChildAbstractTemplate(node){
     //creer les indices de remplacements {{{i}}} pour le nouveau template
     //en partant depuis le plus haut parent vers l'enfant, modifiant le contenu
@@ -274,7 +317,6 @@ function parseExpression(nodeObj,vars){
                     if(typeof vars[nodeObj.variable][i] == "object"){
                         nodeObj.result = replace(nodeObj.result,vars[nodeObj.variable])
                     }
-                    else
                 }
             }
             else if(parseInt(vars[nodeObj.variable]) != NaN){
@@ -330,17 +372,56 @@ function replace(tpl,vars){
     return tpl;
 }
 
-displayNodeTree(getAbstractTemplate(lorem),0);
+
+
+function getNodeObject(type){
+    switch(type){
+
+    }
+}
+
+
+
+function getWholeNodeTree(tpl){
+    if(!evaluate(tpl)) return false;
+    var match, c, e, stack = [], lastpos = 0, currpos = 0;
+    var reg = /<%(\w+) *(?:{{(\W)?(\w+)}})?%>/g;
+
+}
+
+
+
+
+
+
+displayNodeTree(getWholeNodeTree(chunk),0);
+//displayNodeTree(getAbstractTemplate(getNodeTree(lorem)),0);
 
 
 function displayNodeTree(tree,stair){
     var indentation = "\t".repeat(stair);
     console.log(' ');
     console.log(indentation+"***** NODE "+stair+" ******")
-    console.log(indentation+tree.type+" {{"+tree.variable+"}}")
+    console.log(indentation+tree.type+(tree.type == 'text' ? '' : " {{"+tree.variable+"}}"))
     console.log(indentation+tree.content)
     if(tree.childs)
         for(var n = 0;n<tree.childs.length;n++)
             displayNodeTree(tree.childs[n],stair + 1);
 }
 
+function displayRealTpl(tree){
+
+    if(tree.type != 'text' && tree.childs){
+        ret = '';
+        ret+= tree.delimiters ? tree.delimiters[0] : '<root>' ;
+        for(var i = 0;i<tree.childs.length;i++)
+            ret+=displayRealTpl(tree.childs[i]);
+        ret+= tree.delimiters ? tree.delimiters[1] : '</root>';
+        return ret;
+    }
+    else return tree.content;
+
+}
+
+
+//console.log(displayRealTpl(getWholeNodeTree(lorem)));
