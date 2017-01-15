@@ -1,0 +1,7 @@
+<%for {{e}} as {{user}}%>
+    <div class="jeanlouis">
+        <%if {{greet}}%>
+            greet
+        <%endif%>
+    </div>
+<%endfor%>
