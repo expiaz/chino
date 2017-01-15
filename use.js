@@ -1,12 +1,20 @@
+var tpls = require('./tpls');
 var nuzzle = require('./recursive_parser');
 var fs = require('fs');
 
-var tpl_engine = new nuzzle();
+var tple = new nuzzle();
 
-var nodes = fs.readFileSync('nodes.nuzzle','utf8');
-var sample = fs.readFileSync('sample_tpl.nuzzle','utf8');
-//var rendered = tpl_engine.render(nodes,{node1:nodes},'nodeify');
-//console.log(rendered.nodeTree)
-tpl_engine.display('nodes',nodes,{node1:nodes});
 
-tpl_engine.display('jeanlou',sample,{});
+var template = fs.readFileSync('template.nuzzle','utf8');
+var greet_tpl = fs.readFileSync('sample_tpl.nuzzle','utf8');
+var object = {
+    greet:greet_tpl,
+    user:{
+        profil_pic:'http://',
+        bio:'I\'m 20 y old student',
+        greet:'Hi LEONA !'
+    }
+}
+fs.writeFileSync('template.render.nuzzle',tple.render('template',object,template),'utf8');
+
+

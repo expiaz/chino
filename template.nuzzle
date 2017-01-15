@@ -1,0 +1,9 @@
+<div>
+    <img src="{{user.profil_pic}}">
+    <%if {{user.bio}}%>
+    <span>{{user.bio}}</span>
+    <%endif%>
+    <%if {{user.greet}}%>
+    {{>greet}}
+    <%endif%>
+</div>

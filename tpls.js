@@ -14,12 +14,18 @@ var tpl = {
     oiftpl : {
         user:{
             name:'Jean',
+            mark:'18/20',
             marks:{
-                mark:'X',
-                comment:'none'
+                comment:'nul !'
             },
             display:'Family Name'
         }
+    },
+    basictpl:'Error {{class}} n°{{code}} : {{message}}',
+    obasictpl:{
+        class:4,
+        code:4587,
+        message:'access denied'
     },
     subtpl : '<div class="greeting"><%for {{e}}%>Greet {{name}} !<%endfor%></div>',
     lorem : "Lorem {{>lorem1}} ipsum dolor {{>lorem2}} sit amet, consectetur adipiscing elit. Phasellus semper velit quis lorem pulvinar, sed consequat orci pellentesque. Etiam tincidunt " +

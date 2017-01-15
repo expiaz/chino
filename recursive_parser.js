@@ -182,7 +182,7 @@ parser.prototype.getExpressionTree = function(){
 
 
 
-var contextCalcultator = function(vars,nodeTree){
+var contextCalcultator = function(){
     this._stack = [];
     this._context;
     this._vars;
@@ -217,7 +217,7 @@ contextCalcultator.prototype.applyContext = function (node) {
     var contextChanged = false;
     if(node.type == 'PLAIN'){
         node.context = this._context;
-        node.content = this.replace(node.content);
+        node.rendered = this.replace(node.content);
         return node;
     }
     else if(node.type == 'NODE'){
@@ -290,15 +290,36 @@ contextCalcultator.prototype.replace = function (tpl) {
 };
 
 
+var renderEngine = function(){
+    this._nodeTree;
+};
 
+renderEngine.prototype.render = function(nodeTree){
+    this._nodeTree = nodeTree;
+    return this.renderNode(nodeTree);
+}
 
+renderEngine.prototype.renderNode = function(node){
+    var ret = '';
+    for(var i = 0; i < node.childs.length; i++){
+        if(node.childs[i].type == 'NODE'){
+            if(node.childs[i].expression == 'if')
+                if(node.childs[i].rendered)
+                    ret += this.renderNode(node.childs[i]);
+            else ret += this.renderNode(node.childs[i]);
+        }
+        else if(node.childs[i].type == 'PLAIN') ret += node.childs[i].rendered;
+    }
+    return ret;
+}
 
 var nuzzle = function(){
     this.templates = [];
-    this.cache = [];
+    this.cached = [];
     this.precompiler = new precompiler();
     this.parser = new parser();
-    this.contextEngine = new contextCalcultator()
+    this.contextEngine = new contextCalcultator();
+    this.renderEngine = new renderEngine();
 }
 
 nuzzle.prototype.evaluate = function(tpl){
@@ -311,25 +332,34 @@ nuzzle.prototype.evaluate = function(tpl){
     return stack.length == 0;
 }
 
-nuzzle.prototype.render = function(tpl,vars,name,cached){
-    if(!name) throw new Error("Can't parse without a name");
-    if(this.templates[name] || this.cache[name]) throw new Error("Already parsed");
-    this.templates[name] = {tpl:tpl,vars:vars};
-    if(cached) this.cache[name] = tpl;
-    if(!this.evaluate(this.templates[name].tpl)) throw new Error("Fail eval");
-    //precompilation
-    this.templates[name].tpl = this.precompiler.precompile(this.templates[name].tpl,this.templates[name].vars);
-    if(!this.evaluate(this.templates[name].tpl)) throw new Error("Fail eval after precompilation");
-    //Expressions
-    this.templates[name].nodeTree = this.parser.parse(this.templates[name].tpl,this.templates[name].vars);
+nuzzle.prototype.render = function(name,vars,tpl,cached){
+    if(!name) throw new Error("Can't render without a name");
+    if(!this.cached[name]){
+        //registering
+        this.templates[name] = {tpl:tpl,vars:vars};
+        if(!this.evaluate(this.templates[name].tpl)) throw new Error("Fail eval");
+        //precompilation
+        this.templates[name].tpl = this.precompiler.precompile(this.templates[name].tpl,this.templates[name].vars);
+        if(!this.evaluate(this.templates[name].tpl)) throw new Error("Fail eval after precompilation");
+        //Expressions
+        this.templates[name].nodeTree = this.parser.parse(this.templates[name].tpl,this.templates[name].vars);
+    }
+    else{
+        //recuperation du cache
+        this.templates[name] = {tpl:this.cached[name].tpl,nodeTree:this.cached[name].nodeTree};
+        this.templates[name].vars = vars;
+    }
+    //mise en cache
+    if(cached) this.cached[name] = {tpl:this.templates[name].tpl,nodeTree:this.templates[name].nodeTree};
+
     //calculExpressions
     this.templates[name].contextNodeTree = this.contextEngine.contextify(this.templates[name].vars,this.templates[name].nodeTree);
     //replaceVariables
     /*...*/
     //rendering
-    /*..*/
+    this.templates[name].rendered = this.renderEngine.render(this.templates[name].contextNodeTree);
 
-    return this.templates[name];
+    return this.templates[name].rendered;
 };
 
 nuzzle.prototype.display = function(tplName,tpl,vars){
@@ -343,23 +373,13 @@ nuzzle.prototype.displayNodeTree = function(tree,stair){
     var indentation = "\t".repeat(stair);
     console.log(' ');
     console.log(indentation+"***** NODE "+stair+" ******")
-    console.log(indentation+tree.expression+(tree.variable ? "{{"+tree.variable+"}}" : ''));
-    console.log(tree.context);
-    console.log(indentation +  (tree.content ? tree.content : ''));
+    console.log(indentation+tree.expression+(tree.variable ? " {{"+tree.variable+"}}" : ''));
+    //console.log(tree.context);
+    console.log(indentation +  'content : ' + (tree.content ? tree.content : ''));
+    console.log(indentation +  'rendered : ' + (tree.rendered !== undefined ? tree.rendered : ''));
     if(tree.childs)
         for(var n = 0;n<tree.childs.length;n++)
             this.displayNodeTree(tree.childs[n],stair + 1);
 };
 
 module.exports = nuzzle;
-
-
-
-
-var tpls = require('./tpls');
-
-var tple = new nuzzle();
-
-var g = tple.render(tpls.iftpl,tpls.oiftpl,'john');
-
-tple.displayNodeTree(g.contextNodeTree);
