@@ -1,5 +1,7 @@
-<%if {{!user}}%>
-    <div>
-        {{user.friend}}
-    </div>
+<%if {{user}}%>
+    <%if {{user.mescouilles}}%>
+        <div>
+            {{user.friend}}
+        </div>
+    <%endif%>
 <%endif%>

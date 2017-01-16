@@ -307,19 +307,25 @@ contextCalcultator.prototype.applyContext = function (node) {
     else if(node.type == 'NODE'){
         if(node.childs.length){
             if(node.expression == 'if'){
+                var pushContext = true;
                 if(node.symbol){
                     switch(node.symbol){
                         case '!':
-                            node.variable = !this.getContext(node.variable,1,false,true);
+                            node.variable = !this.getContext(node.variable);
+                            break;
+                        case '&':
+                            node.variable = this.getContext(node.variable,1,true);
                             break;
                         case ':':
-                            node.variable = this.getContext(node.variable,1,true,true);
+                            pushContext = false;
                             break;
+                        default:
+                            node.variable = this.getContext(node.variable);
                     }
                 }
-                else node.variable = this.getContext(node.variable,1,false,true);
+                else node.variable = this.getContext(node.variable,1);
                 if(node.variable){
-                    if(typeof node.variable == "object" && !Array.isArray(node.variable)){
+                    if(typeof node.variable == "object" && !Array.isArray(node.variable) && pushContext){
                         this._stack.push(node.variable);
                         node.context = node.variable;
                         contextChanged = true;
@@ -367,7 +373,7 @@ contextCalcultator.prototype.replace = function (tpl) {
                 case '!':
                     ctx = !this.getContext(match);
                     break;
-                case ':':
+                case '&':
                     ctx = this.getContext(match,1,true);
                     break;
                 default:
@@ -420,7 +426,7 @@ renderEngine.prototype.renderNode = function(node){
 
 
 renderEngine.prototype.trimText = function(text){
-    return text.replace(/^[\n\r]+|[\n\r]+$/g,'');
+    return text.replace(/^[\r\n]+|[\r\n]+$/g,'');
 }
 
 
