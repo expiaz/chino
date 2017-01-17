@@ -1,0 +1,24 @@
+{
+  "name": "chino",
+  "version": "1.0.0",
+  "description": "simple but usefull template parser in js for server of front side",
+  "main": "parser.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/expiaz/template-parser-js.git"
+  },
+  "keywords": [
+    "parser",
+    "js",
+    "template"
+  ],
+  "author": "expiaz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/expiaz/template-parser-js/issues"
+  },
+  "homepage": "https://github.com/expiaz/template-parser-js#readme"
+}
