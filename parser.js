@@ -1,7 +1,3 @@
-Array.prototype.get = function() {
-    return this[this.length - 1];
-}
-
 
 /**
  * @class precompiler
@@ -97,12 +93,13 @@ parser.prototype.ForNode = function(raw){
     this.type = 'OPENING';
     this.expression = 'for';
     this.childs = [];
+    this.iterateChilds = [];
     //this.content = '';
     this.rendered = '';
     this.context = {};
     this.symbol = raw.symbol;
     this.variable = raw.variable;
-    this.subvariable = raw.subvariable;
+    this.subvariable = raw.subvariable || 'i';
     this.subsymbol = raw.subsymbol;
     this.keyword = raw.keyword;
     this.tags = [raw.tag];
@@ -265,8 +262,9 @@ contextCalcultator.prototype.contextify = function(vars,nodeTree){
     this._context = vars;
     this._vars = vars;
     this._nodeTree = nodeTree;
-    return this.applyContext();
+    return this.applyContext(this._nodeTree);
 };
+
 
 /**
  * browse contexts to find the value of varName
@@ -277,6 +275,7 @@ contextCalcultator.prototype.contextify = function(vars,nodeTree){
  */
 contextCalcultator.prototype.getContext = function(varName,stackStair,locked){
     stackStair = stackStair || 1;
+    console.log(varName);
     var v = this._stack[this._stack.length - stackStair] || -1,
         t = varName.split('.');
     if(v == -1) return undefined;
@@ -296,9 +295,7 @@ contextCalcultator.prototype.getContext = function(varName,stackStair,locked){
  * @returns nodeTree
  */
 contextCalcultator.prototype.applyContext = function (node) {
-    node = node || this._nodeTree;
     this._context = this._stack[this._stack.length -1] || {};
-    var contextChanged = false;
     if(node.type == 'PLAIN'){
         node.context = this._context;
         node.rendered = this.replace(node.content);
@@ -317,6 +314,7 @@ contextCalcultator.prototype.applyContext = function (node) {
                             node.variable = this.getContext(node.variable,1,true);
                             break;
                         case ':':
+                            node.variable = this.getContext(node.variable);
                             pushContext = false;
                             break;
                         default:
@@ -325,26 +323,74 @@ contextCalcultator.prototype.applyContext = function (node) {
                 }
                 else node.variable = this.getContext(node.variable,1);
                 if(node.variable){
+                    node.rendered = true;
                     if(typeof node.variable == "object" && !Array.isArray(node.variable) && pushContext){
                         this._stack.push(node.variable);
                         node.context = node.variable;
-                        contextChanged = true;
                     }
-                    node.rendered = true;
+                    for(var i =0; i < node.childs.length; i++){
+                        node.childs[i] = this.applyContext(node.childs[i]);
+                    }
+                    if(pushContext) this._stack.pop();
                 }
                 else{
                     node.rendered = false;
                     node.context = this._context;
-                    return node;
                 }
+                return node;
             }
             else if(node.expression == 'for'){
-
+                var currContext;
+                node.iterateChilds = node.childs;
+                node.childs = [];
+                if(node.symbol){
+                    switch(node.symbol){
+                        case '&':
+                            node.variable = this.getContext(node.variable,1,true);
+                            break;
+                        default:
+                            node.variable = this.getContext(node.variable);
+                            break;
+                    }
+                }
+                else node.variable = this.getContext(node.variable);
+                if(typeof node.variable == "object" && Array.isArray(node.variable)){
+                    var dupChild;
+                    for(var i = 0; i < node.variable.length; i++){
+                        currContext = {};
+                        currContext[node.subvariable] = node.variable[i];
+                        this._stack.push(currContext);
+                        for(var j =0; j < node.iterateChilds.length; j++){
+                            dupChild = Object.assign({},node.iterateChilds[j]);
+                            node.childs.push(this.applyContext(dupChild));
+                        }
+                        this._stack.pop();
+                    }
+                    node.context = node.variable;
+                    node.rendered = true;
+                }
+                else if(!isNaN(parseInt(node.variable))){
+                    node.variable = parseInt(node.variable);
+                    for(var i = 0; i < node.variable; i++){
+                        currContext = {};
+                        currContext[node.subvariable] = i;
+                        this._stack.push(currContext);
+                        for(var j =0; j < node.iterateChilds.length; j++){
+                            node.childs.push(this.applyContext(node.iterateChilds[j]));
+                        }
+                        this._stack.pop();
+                    }
+                    node.context = node.variable;
+                    node.rendered = true;
+                }
+                else {
+                    node.rendered = false;
+                    node.context = this._context;
+                }
             }
-            for(var i =0; i < node.childs.length; i++){
-                node.childs[i] = this.applyContext(node.childs[i]);
-            }
-            if(contextChanged) this._stack.pop();
+        }
+        else{
+            node.rendered = false;
         }
         return node;
     }
@@ -365,6 +411,7 @@ contextCalcultator.prototype.applyContext = function (node) {
  * @returns tpl
  */
 contextCalcultator.prototype.replace = function (tpl) {
+    if(tpl == '\r\n' || tpl == '\n\r') return '';
     tpl = tpl.replace(/{{(?:(\W)?([^{]+))}}/g,replace_match.bind(this));
     function replace_match(fullmatch,symbol,match){
         var ctx;
@@ -414,12 +461,13 @@ renderEngine.prototype.renderNode = function(node){
     var ret = '';
     for(var i = 0; i < node.childs.length; i++){
         if(node.childs[i].type == 'NODE'){
-            if(node.childs[i].expression == 'if')
+            if(node.childs[i].expression == 'if' || node.childs[i].expression == 'for')
                 if(node.childs[i].rendered)
                     ret += this.renderNode(node.childs[i]);
-            else ret += this.renderNode(node.childs[i]);
         }
-        else if(node.childs[i].type == 'PLAIN') ret += this.trimText(node.childs[i].rendered);
+        else if(node.childs[i].type == 'PLAIN'){
+            ret += this.trimText(node.childs[i].rendered);
+        }
     }
     return ret;
 }
