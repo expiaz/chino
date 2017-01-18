@@ -1,3 +1,5 @@
+<ul>
 <%for {{users}} as {{user}}%>
-    <div><%if {{user.classroom}}%>{{user.name}}<%endif%></div>
+    <li>{{user.nom}} {{user.prenom}} ({{user.note}}) <%if {{user.diplome}}%>Admis<%endif%><%if {{!user.diplome}}%>Refusé<%endif%></li>
 <%endfor%>
+</ul>

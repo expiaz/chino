@@ -275,7 +275,6 @@ contextCalcultator.prototype.contextify = function(vars,nodeTree){
  */
 contextCalcultator.prototype.getContext = function(varName,stackStair,locked){
     stackStair = stackStair || 1;
-    console.log(varName);
     var v = this._stack[this._stack.length - stackStair] || -1,
         t = varName.split('.');
     if(v == -1) return undefined;
@@ -304,7 +303,7 @@ contextCalcultator.prototype.applyContext = function (node) {
     else if(node.type == 'NODE'){
         if(node.childs.length){
             if(node.expression == 'if'){
-                var pushContext = true;
+                var pushContext = true, contextPushed = false;
                 if(node.symbol){
                     switch(node.symbol){
                         case '!':
@@ -327,11 +326,12 @@ contextCalcultator.prototype.applyContext = function (node) {
                     if(typeof node.variable == "object" && !Array.isArray(node.variable) && pushContext){
                         this._stack.push(node.variable);
                         node.context = node.variable;
+                        contextPushed = true;
                     }
                     for(var i =0; i < node.childs.length; i++){
                         node.childs[i] = this.applyContext(node.childs[i]);
                     }
-                    if(pushContext) this._stack.pop();
+                    if(contextPushed) this._stack.pop();
                 }
                 else{
                     node.rendered = false;
