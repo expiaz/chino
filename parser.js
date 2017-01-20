@@ -340,10 +340,13 @@ contextCalcultator.prototype.applyContext = function (node) {
                 return node;
             }
             else if(node.expression == 'for'){
-                var currContext;
+                var currContext, dupChild;
                 node.iterateChilds = node.childs;
                 node.childs = [];
-                if(node.symbol){
+                if(!isNaN(parseInt(node.variable))){
+                    node.variable = parseInt(node.variable);
+                }
+                else if(node.symbol){
                     switch(node.symbol){
                         case '&':
                             node.variable = this.getContext(node.variable,1,true);
@@ -355,7 +358,6 @@ contextCalcultator.prototype.applyContext = function (node) {
                 }
                 else node.variable = this.getContext(node.variable);
                 if(typeof node.variable == "object" && Array.isArray(node.variable)){
-                    var dupChild;
                     for(var i = 0; i < node.variable.length; i++){
                         currContext = {};
                         currContext[node.subvariable] = node.variable[i];
@@ -376,7 +378,8 @@ contextCalcultator.prototype.applyContext = function (node) {
                         currContext[node.subvariable] = i;
                         this._stack.push(currContext);
                         for(var j =0; j < node.iterateChilds.length; j++){
-                            node.childs.push(this.applyContext(node.iterateChilds[j]));
+                            dupChild = Object.assign({},node.iterateChilds[j]);
+                            node.childs.push(this.applyContext(dupChild));
                         }
                         this._stack.pop();
                     }
