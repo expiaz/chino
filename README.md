@@ -49,8 +49,9 @@ _Greet.chino_
     <h1>Welcome</h1>
     <%if {{user}}%>
         <!--
-        add a context
+        'if' add user context
         actual context : {username:'John Doe'}
+        result : <span>John Doe</span>
         -->
         <span>{{username}}</span>
     <%endif%>
@@ -60,6 +61,15 @@ _Greet.chino_
 </div>
 ```
 
+Result:
+```html
+<div>
+    <h1>Welcome</h1>
+    <span>John Doe</span>
+</div>
+```
+
+
 ####Same example with :,&
 
 _Greet.chino_
@@ -68,7 +78,7 @@ _Greet.chino_
     <h1>Welcome</h1>
     <%if {{:user}}%>
         <!--
-        the 'if' does not add context because of ':'
+        'if' does not add user context because of ':'
         username is linked to context with '&'
         actual context : {user:{username:'John Doe'}}
         result : <span></span>
@@ -77,7 +87,7 @@ _Greet.chino_
     <%endif%>
     <%if {{:user}}%>
          <!--
-         the 'if' does not add context because of ':'
+         'if' does not add user context because of ':'
          actual context : {user:{username:'John Doe'}}
          result : <span></span>
          -->
@@ -85,7 +95,7 @@ _Greet.chino_
     <%endif%>
     <%if {{:user}}%>
         <!--
-        the 'if' does not add context because of ':'
+        'if' does not add user context because of ':'
         actual context : {user:{username:'John Doe'}}
         result : <span>John Doe</span>
         -->
@@ -93,6 +103,7 @@ _Greet.chino_
     <%endif%>
     <%if {{user}}%>
          <!--
+         'if' add the user context
          actual context : {username:'John Doe'}
          user.username is not in actual context, chino reach the next one which is {user:{username'John Doe'}} and find the user.username value
          result : <span>John Doe</span>
@@ -101,6 +112,7 @@ _Greet.chino_
     <%endif%>
     <%if {{user}}%>
          <!--
+         'if' add the user context
          actual context : {username:'John Doe'}
          username is linked to context with '&'
          user.username is not in actual context so it's replaced by ''
