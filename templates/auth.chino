@@ -1,0 +1,45 @@
+<div>
+    <h1>Welcome</h1>
+    <%if {{:user}}%>
+    <!--
+    the 'if' does not add context because of ':'
+    username is linked to context with '&'
+    actual context : {user:{username:'John Doe'}}
+    result : <span></span>
+    -->
+    <span>{{&username}}</span>
+    <%endif%>
+    <%if {{:user}}%>
+    <!--
+    the 'if' does not add context because of ':'
+    actual context : {user:{username:'John Doe'}}
+    result : <span></span>
+    -->
+    <span>{{username}}</span>
+    <%endif%>
+    <%if {{:user}}%>
+    <!--
+    the 'if' does not add context because of ':'
+    actual context : {user:{username:'John Doe'}}
+    result : <span>John Doe</span>
+    -->
+    <span>{{user.username}}</span>
+    <%endif%>
+    <%if {{user}}%>
+    <!--
+    actual context : {username:'John Doe'}
+    user.username is not in actual context, chino reach the next one which is {user:{username'John Doe'}} and find the user.username value
+    result : <span>John Doe</span>
+    -->
+    <span>{{user.username}}</span>
+    <%endif%>
+    <%if {{user}}%>
+    <!--
+    actual context : {username:'John Doe'}
+    username is linked to context with '&'
+    user.username is not in actual context so it's replaced by ''
+    result : <span></span>
+    -->
+    <span>{{&user.username}}</span>
+    <%endif%>
+</div>

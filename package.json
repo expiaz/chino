@@ -1,8 +1,8 @@
 {
   "name": "chino",
   "version": "1.0.0",
-  "description": "simple but usefull template parser in js for server of front side",
-  "main": "use.js",
+  "description": "simple but usefull template parser in js for server or front side",
+  "main": "chino.js",
   "scripts": {
     "run":"node use.js",
     "test": "echo \"Error: no test specified\" && exit 1"
