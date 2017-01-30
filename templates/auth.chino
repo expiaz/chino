@@ -1,45 +1,20 @@
-<div>
-    <h1>Welcome</h1>
-    <%if {{:user}}%>
-    <!--
-    the 'if' does not add context because of ':'
-    username is linked to context with '&'
-    actual context : {user:{username:'John Doe'}}
-    result : <span></span>
-    -->
-    <span>{{&username}}</span>
-    <%endif%>
-    <%if {{:user}}%>
-    <!--
-    the 'if' does not add context because of ':'
-    actual context : {user:{username:'John Doe'}}
-    result : <span></span>
-    -->
-    <span>{{username}}</span>
-    <%endif%>
-    <%if {{:user}}%>
-    <!--
-    the 'if' does not add context because of ':'
-    actual context : {user:{username:'John Doe'}}
-    result : <span>John Doe</span>
-    -->
-    <span>{{user.username}}</span>
-    <%endif%>
-    <%if {{user}}%>
-    <!--
-    actual context : {username:'John Doe'}
-    user.username is not in actual context, chino reach the next one which is {user:{username'John Doe'}} and find the user.username value
-    result : <span>John Doe</span>
-    -->
-    <span>{{user.username}}</span>
-    <%endif%>
-    <%if {{user}}%>
-    <!--
-    actual context : {username:'John Doe'}
-    username is linked to context with '&'
-    user.username is not in actual context so it's replaced by ''
-    result : <span></span>
-    -->
-    <span>{{&user.username}}</span>
-    <%endif%>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form>
+    <input type="text" name="login" placeholder="login"/>
+    <input type="password" name="password" placeholder="password"/>
+    <input type="submit" name="sub" value="submit"/>
+</form>
+<%if {{error}}%>
+<div class="error">{{error}}</div>
+<%endif%>
+<script src="/socket.io/socket.io.js" type="text/javascript"></script>
+<script src="/jquery.min.js" type="text/javascript"></script>
+<script src="/js/auth.js" type="text/javascript"></script>
+</body>
+</html>

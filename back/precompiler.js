@@ -26,14 +26,16 @@ precompiler.prototype.precompile = function(tpl,vars){
  * replace {{>*}} tags by their content
  */
 precompiler.prototype.makeInjections = function(){
-    var self = this;
-    this._tpl = this._tpl.replace(/{{>(\w+)}}/g, function (fullmatch,match){
-        var v = self._vars,
-            t = match.split('.');
+    var reg = /{{>(\w+)}}/g,
+        match = [];
+
+    while(match = reg.exec(this._tpl)){
+        var v = this._vars,
+            t = match[1].split('.');
         for(var i =0; i<t.length; i++)
             v = v[t[i]];
-        return v == undefined ? fs.readFileSync('templates/'+match+'.chino') : v;
-    });
+        this._tpl.replace(match[0],v == undefined ? fs.readFileSync('templates/'+match+'.chino') : v);
+    }
 };
 
 

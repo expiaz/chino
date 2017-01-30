@@ -171,25 +171,33 @@ contextCalcultator.prototype.applyContext = function (node) {
  */
 contextCalcultator.prototype.replace = function (tpl) {
     if(tpl == '\r\n' || tpl == '\n\r') return '';
-    tpl = tpl.replace(/{{(?:(\W)?([^{]+))}}/g,replace_match.bind(this));
-    function replace_match(fullmatch,symbol,match){
-        var ctx;
+
+    var match = [],
+        reg = /{{(?:(\W)?([^{]+))}}/g;
+
+    while(match = reg.exec(tpl)){
+        var symbol = match[1],
+            m = match[2],
+            ctx;
+
         if(symbol){
             switch(symbol){
                 case '!':
-                    ctx = !this.getContext(match);
+                    ctx = !this.getContext(m);
                     break;
                 case '&':
-                    ctx = this.getContext(match,1,true);
+                    ctx = this.getContext(m,1,true);
                     break;
                 default:
-                    ctx = this.getContext(match);
+                    ctx = this.getContext(m);
                     break;
             }
         }
-        else ctx = this.getContext(match);
-        return ctx !== undefined && typeof ctx !== "object" ? ctx : '';
+        else ctx = this.getContext(m);
+
+        tpl = tpl.replace(match[0],ctx !== undefined && typeof ctx !== "object" ? ctx : '');
     }
+
     return tpl;
 };
 

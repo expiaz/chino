@@ -76,6 +76,9 @@ chino.prototype.register = function (tpl,name,vars) {
 chino.prototype.render = function(tpl,vars,name){
     var template;
 
+    if(!vars)
+        vars = {};
+
     if(typeof vars != "object")
         throw new Error('vars aren\'t object type');
 
@@ -89,11 +92,11 @@ chino.prototype.render = function(tpl,vars,name){
         template = this.engine.parser.parse(template);
     }
     else{
-        template = this.cached[tpl];
+        template = Object.assign({},JSON.parse(JSON.stringify(this.cached[tpl])));
     }
 
     if(name)
-        this.cached[name] = template;
+        this.cached[name] = Object.assign({},template);
 
     template = this.engine.context.contextify(template,vars);
     template = this.engine.render.render(template);
