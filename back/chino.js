@@ -2,14 +2,15 @@ var precompiler = require('./precompiler');
 var parser = require('./parser');
 var context = require('./context');
 var render = require('./render');
+var dictionnary = require('./dictionnary');
 var fs = require('fs');
 
 /**
  * @class chino
  */
 var chino = function(){
-    this.templates = [];
-    this.cached = [];
+    this._templates = new dictionnary();
+    this._cached = new dictionnary();
     this.engine = {
         precompiler: new precompiler(),
         parser: new parser(),
@@ -50,20 +51,20 @@ chino.prototype.register = function (tpl,name,vars) {
     if(!name || typeof name != "string")
         name = tpl.replace('.chino','');
 
-    this.cached[name] = fs.readFileSync('templates/'+tpl,'utf8');
+    this._cached.add(name,fs.readFileSync('templates/'+tpl,'utf8'));
 
-    if(!this.evaluate(this.cached[name]))
+    if(!this.evaluate(this._cached.get(name)))
         throw new Error("Fail eval");
 
     if(vars && typeof vars == "object"){
-        this.cached[name] = this.engine.precompiler.precompile(this.cached[name],vars);
-        if(!this.evaluate(this.cached[name]))
+        this._cached.set(name,this.engine.precompiler.precompile(this._cached.get(name),vars));
+        if(!this.evaluate(this._cached.get(name)))
             throw new Error("Fail precompliation eval");
     }
 
-    this.cached[name] = this.engine.parser.parse(this.cached[name]);
+    this._cached.set(name,this.engine.parser.parse(this._cached.get(name)));
 
-    return this.cached[name];
+    return this._cached.get(name);
 }
 
 /**
@@ -92,55 +93,18 @@ chino.prototype.render = function(tpl,vars,name){
         template = this.engine.parser.parse(template);
     }
     else{
-        template = Object.assign({},JSON.parse(JSON.stringify(this.cached[tpl])));
+        template = this._cached.duplicate(tpl);
     }
 
     if(name)
-        this.cached[name] = Object.assign({},template);
+        this._cached.set(name,template);
+
 
     template = this.engine.context.contextify(template,vars);
     template = this.engine.render.render(template);
 
     return template;
 }
-
-/**
- * launch the rendering process of a template
- * @param name
- * @param vars
- * @param tpl
- * @param cached : to put in cache
- * @returns {string} template rendered
- */
-chino.prototype.renderbis = function(name,vars,tpl,cached){
-    if(!name) throw new Error("Can't render without a name");
-    if(!this.cached[name]){
-        //registering
-        this.templates[name] = {tpl:tpl,vars:vars};
-        if(!this.evaluate(this.templates[name].tpl)) throw new Error("Fail eval");
-        //precompilation
-        this.templates[name].tpl = this.precompiler.precompile(this.templates[name].tpl,this.templates[name].vars);
-        if(!this.evaluate(this.templates[name].tpl)) throw new Error("Fail eval after precompilation");
-        //Expressions
-        this.templates[name].nodeTree = this.parser.parse(this.templates[name].tpl,this.templates[name].vars);
-    }
-    else{
-        //recuperation du cache
-        this.templates[name] = {tpl:this.cached[name].tpl,nodeTree:this.cached[name].nodeTree};
-        this.templates[name].vars = vars;
-    }
-    //mise en cache
-    if(cached) this.cached[name] = {tpl:this.templates[name].tpl,nodeTree:this.templates[name].nodeTree};
-
-    //calculExpressions
-    this.templates[name].contextNodeTree = this.contextEngine.contextify(this.templates[name].vars,this.templates[name].nodeTree);
-    //replaceVariables
-    /*...*/
-    //rendering
-    this.templates[name].rendered = this.renderEngine.render(this.templates[name].contextNodeTree);
-
-    return this.templates[name].rendered;
-};
 
 /**
  * display the nodeTree with nesting levels on the console

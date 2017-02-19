@@ -1,4 +1,127 @@
-var fs = require('fs');
+var Dictionnary = function () {
+    this._keys = [];
+    this._values = [];
+}
+
+Dictionnary.prototype.add = function (key,value) {
+    if(typeof key == "object"){
+        for(var k in key){
+            if(typeof k == "object") {
+                this.add(k);
+            }
+            else if(this.existsKey(k)){
+                this.set(k,key[k]);
+            }
+            else{
+                this._keys.push(k);
+                this._values.push(key[k]);
+            }
+        }
+    }
+    else if(typeof key == "string" && !!value){
+        if(this.existsKey(key)){
+            this.set(key,value);
+        }
+        else{
+            this._keys.push(key);
+            this._values.push(value);
+        }
+    }
+}
+
+Dictionnary.prototype.set = function (key,value) {
+    if(typeof key == "object"){
+        for(var k in key){
+            if(typeof k == "object") {
+                this.set(k);
+            }
+            else if(!this.existsKey(k)){
+                this.add(k,key[k]);
+            }
+            else{
+                this._values[this._keys.indexOf(k)] = key[k];
+            }
+        }
+    }
+    else if(typeof key == "string" && !!value){
+        if(!this.existsKey(key)){
+            this.add(key,value);
+        }
+        else{
+            this._values[this._keys.indexOf(key)] = value;
+        }
+    }
+}
+
+Dictionnary.prototype.get = function (key) {
+    return this._values[this._keys.indexOf(key)] || -1;
+}
+
+Dictionnary.prototype.duplicate = function (key) {
+    var ret = this._values.slice(this._keys.indexOf(key) || 0,1)[0];
+    if(typeof ret == "object"){
+        if(Array.isArray(ret)){
+            return this.utils.map_(ret);
+        }
+        else{
+            return this.utils.assign_(ret);
+        }
+    }
+    return ret;
+}
+
+
+
+Dictionnary.prototype.utils = {
+    assign_: function (obj) {
+        var dup = {};
+        for(var k in obj){
+            dup[k] = typeof obj[k] == "object" ? Array.isArray(obj[k]) ? this.map_(obj[k]) : this.assign_(obj[k]) : obj[k];
+        }
+        return dup;
+    },
+    map_: function (arr) {
+        return arr.map(function (e) {
+            return typeof e == "object" ? Array.isArray(e) ? this.map_(e) : this.assign_(e) : e
+        }, this);
+    }
+}
+
+Dictionnary.prototype.remove = function (key) {
+    if(this._keys.indexOf(key) == -1) return false;
+    var index = this._keys.indexOf(key);
+    this._keys.splice(index,1);
+    return this._values.splice(index,1);
+}
+
+Dictionnary.prototype.replace = function (key,value) {
+    this._values[this._keys.indexOf(key)] = value;
+}
+
+Dictionnary.prototype.existsKey = function (key) {
+    return this._keys.indexOf(key) != -1;
+}
+
+Dictionnary.prototype.existsValue = function (value) {
+    return this._values.indexOf(value) != -1;
+}
+
+Dictionnary.prototype.getKey = function (value) {
+    return this._keys[this._values.indexOf(value)];
+}
+
+Dictionnary.prototype[Symbol.iterator] = function () {
+    var index = 0,
+        data  = this._values;
+
+    return {
+        next: function() {
+            return { value: data[++index], done: !(index in data) }
+        }
+    };
+}
+
+
 
 /**
  * @class precompiler
@@ -26,13 +149,15 @@ precompiler.prototype.precompile = function(tpl,vars){
  * replace {{>*}} tags by their content
  */
 precompiler.prototype.makeInjections = function(){
-    this._tpl = this._tpl.replace(/{{>(\w+)}}/g, replace_match.bind(this));
-    function replace_match(fullmatch,match){
+    var reg = /{{>(\w+)}}/g,
+        match = [];
+
+    while(match = reg.exec(this._tpl)){
         var v = this._vars,
-            t = match.split('.');
+            t = match[1].split('.');
         for(var i =0; i<t.length; i++)
             v = v[t[i]];
-        return v;
+        this._tpl.replace(match[0],v == undefined ? fs.readFileSync('templates/'+match+'.chino') : v);
     }
 };
 
@@ -48,6 +173,9 @@ var parser = function(){
     };
     this._tpl;
 };
+
+
+
 
 
 /**
@@ -242,6 +370,8 @@ parser.prototype.getExpressionTree = function(){
 }
 
 
+
+
 /**
  * @class contextCalculator
  */
@@ -257,7 +387,7 @@ var contextCalcultator = function(){
  * @param vars
  * @param nodeTree
  */
-contextCalcultator.prototype.contextify = function(vars,nodeTree){
+contextCalcultator.prototype.contextify = function(nodeTree,vars){
     this._stack = [vars];
     this._context = vars;
     this._vars = vars;
@@ -363,7 +493,9 @@ contextCalcultator.prototype.applyContext = function (node) {
                         currContext[node.subvariable] = node.variable[i];
                         this._stack.push(currContext);
                         for(var j =0; j < node.iterateChilds.length; j++){
-                            dupChild = Object.assign({},node.iterateChilds[j]);
+                            dupChild = {};
+                            for(var k in node.iterateChilds[j])
+                                dupChild[k] = node.iterateChilds[j][k];
                             node.childs.push(this.applyContext(dupChild));
                         }
                         this._stack.pop();
@@ -378,7 +510,9 @@ contextCalcultator.prototype.applyContext = function (node) {
                         currContext[node.subvariable] = i;
                         this._stack.push(currContext);
                         for(var j =0; j < node.iterateChilds.length; j++){
-                            dupChild = Object.assign({},node.iterateChilds[j]);
+                            dupChild = {};
+                            for(var k in node.iterateChilds[j])
+                                dupChild[k] = node.iterateChilds[j][k];
                             node.childs.push(this.applyContext(dupChild));
                         }
                         this._stack.pop();
@@ -415,27 +549,36 @@ contextCalcultator.prototype.applyContext = function (node) {
  */
 contextCalcultator.prototype.replace = function (tpl) {
     if(tpl == '\r\n' || tpl == '\n\r') return '';
-    tpl = tpl.replace(/{{(?:(\W)?([^{]+))}}/g,replace_match.bind(this));
-    function replace_match(fullmatch,symbol,match){
-        var ctx;
+
+    var match = [],
+        reg = /{{(?:(\W)?([^{]+))}}/g;
+
+    while(match = reg.exec(tpl)){
+        var symbol = match[1],
+            m = match[2],
+            ctx;
+
         if(symbol){
             switch(symbol){
                 case '!':
-                    ctx = !this.getContext(match);
+                    ctx = !this.getContext(m);
                     break;
                 case '&':
-                    ctx = this.getContext(match,1,true);
+                    ctx = this.getContext(m,1,true);
                     break;
                 default:
-                    ctx = this.getContext(match);
+                    ctx = this.getContext(m);
                     break;
             }
         }
-        else ctx = this.getContext(match);
-        return ctx !== undefined && typeof ctx !== "object" ? ctx : '';
+        else ctx = this.getContext(m);
+
+        tpl = tpl.replace(match[0],ctx !== undefined && typeof ctx !== "object" ? ctx : '');
     }
+
     return tpl;
 };
+
 
 
 /**
@@ -482,12 +625,13 @@ renderEngine.prototype.trimText = function(text){
 
 
 
+
+
 /**
  * @class chino
  */
 var chino = function(){
-    this.templates = [];
-    this.cached = [];
+    this._cached = new Dictionnary();
     this.engine = {
         precompiler: new precompiler(),
         parser: new parser(),
@@ -521,21 +665,23 @@ chino.prototype.evaluate = function(tpl){
  * @returns {*}
  */
 chino.prototype.register = function (tpl,name,vars) {
+    if(!tpl || !name)
+        throw new Error("Can't register a template without name or content");
 
-    this.cached[name] = tpl;
+    this._cached.add(name,tpl);
 
-    if(!this.evaluate(this.cached[name]))
-        throw new Error("Fail eval");
+    if(!this.evaluate(this._cached.get(name)))
+
 
     if(vars && typeof vars == "object"){
-        this.cached[name] = this.engine.precompiler.precompile(this.cached[name],vars);
-        if(!this.evaluate(this.cached[name]))
+        this._cached.set(name,this.engine.precompiler.precompile(this._cached.get(name),vars));
+        if(!this.evaluate(this._cached.get(name)))
             throw new Error("Fail precompliation eval");
     }
 
-    this.cached[name] = this.engine.parser.parse(this.cached[name]);
+    this._cached.set(name,this.engine.parser.parse(this._cached.get(name)));
 
-    return this.cached[name];
+    return this._cached.get(name);
 }
 
 /**
@@ -548,11 +694,17 @@ chino.prototype.register = function (tpl,name,vars) {
 chino.prototype.render = function(tpl,vars,name){
     var template;
 
-    if(!typeof vars == "object")
+    if(!vars)
+        vars = {};
+
+    if(typeof vars != "object" || Array.isArray(vars))
         throw new Error('vars aren\'t object type');
 
-    if (!this.cached[tpl]){
-        template = fs.readFileSync('templates/'+tpl,'utf8');
+    if (this._cached.existsKey(tpl)){
+        template = this._cached.duplicate(tpl);
+    }
+    else{
+        template = tpl;
         if(!this.evaluate(template))
             throw new Error("Fail eval");
         template = this.engine.precompiler.precompile(template,vars);
@@ -560,56 +712,16 @@ chino.prototype.render = function(tpl,vars,name){
             throw new Error("Fail precompliation eval");
         template = this.engine.parser.parse(template);
     }
-    else{
-        template = this.cached[tpl];
-    }
 
     if(name)
-        this.cached[name] = template;
+        this._cached.set(name,template);
+
 
     template = this.engine.context.contextify(template,vars);
     template = this.engine.render.render(template);
 
     return template;
 }
-
-/**
- * launch the rendering process of a template
- * @param name
- * @param vars
- * @param tpl
- * @param cached : to put in cache
- * @returns {string} template rendered
- */
-chino.prototype.renderbis = function(name,vars,tpl,cached){
-    if(!name) throw new Error("Can't render without a name");
-    if(!this.cached[name]){
-        //registering
-        this.templates[name] = {tpl:tpl,vars:vars};
-        if(!this.evaluate(this.templates[name].tpl)) throw new Error("Fail eval");
-        //precompilation
-        this.templates[name].tpl = this.precompiler.precompile(this.templates[name].tpl,this.templates[name].vars);
-        if(!this.evaluate(this.templates[name].tpl)) throw new Error("Fail eval after precompilation");
-        //Expressions
-        this.templates[name].nodeTree = this.parser.parse(this.templates[name].tpl,this.templates[name].vars);
-    }
-    else{
-        //recuperation du cache
-        this.templates[name] = {tpl:this.cached[name].tpl,nodeTree:this.cached[name].nodeTree};
-        this.templates[name].vars = vars;
-    }
-    //mise en cache
-    if(cached) this.cached[name] = {tpl:this.templates[name].tpl,nodeTree:this.templates[name].nodeTree};
-
-    //calculExpressions
-    this.templates[name].contextNodeTree = this.contextEngine.contextify(this.templates[name].vars,this.templates[name].nodeTree);
-    //replaceVariables
-    /*...*/
-    //rendering
-    this.templates[name].rendered = this.renderEngine.render(this.templates[name].contextNodeTree);
-
-    return this.templates[name].rendered;
-};
 
 /**
  * display the nodeTree with nesting levels on the console
@@ -629,5 +741,3 @@ chino.prototype.displayNodeTree = function(tree,stair){
         for(var n = 0;n<tree.childs.length;n++)
             this.displayNodeTree(tree.childs[n],stair + 1);
 };
-
-module.exports = chino;
