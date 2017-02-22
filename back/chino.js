@@ -5,11 +5,12 @@ var render = require('./render');
 var dictionnary = require('./dictionnary');
 var fs = require('fs');
 
+
+
 /**
  * @class chino
  */
 var chino = function(){
-    this._templates = new dictionnary();
     this._cached = new dictionnary();
     this.engine = {
         precompiler: new precompiler(),
@@ -29,8 +30,9 @@ chino.prototype.evaluate = function(tpl){
         matches = [],
         termReg = /<%(\w+) *(?:{{(\W)?([^}]+)}})? *(?:(\w+) *{{(\W)?(\w+)}})?%>/gi;
 
-    while (matches = termReg.exec(tpl))
+    while (matches = termReg.exec(tpl)){
         stack.length?(matches[1].match(/end/i)?(stack[stack.length-1]==matches[1].replace('end','')?stack.pop():null):stack.push(matches[1])):stack.push(matches[1]);
+    }
 
     return stack.length == 0;
 }

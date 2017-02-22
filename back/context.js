@@ -177,9 +177,11 @@ contextCalcultator.prototype.replace = function (tpl) {
     if(tpl == '\r\n' || tpl == '\n\r') return '';
 
     var match = [],
-        reg = /{{(?:(\W)?([^{]+))}}/g;
+        reg = /{{(\W)?([^{]+)}}/g,
+        ret = tpl;
 
     while(match = reg.exec(tpl)){
+
         var symbol = match[1],
             m = match[2],
             ctx;
@@ -199,10 +201,10 @@ contextCalcultator.prototype.replace = function (tpl) {
         }
         else ctx = this.getContext(m);
 
-        tpl = tpl.replace(match[0],ctx !== undefined && typeof ctx !== "object" ? ctx : '');
+        ret = ret.replace(match[0],ctx !== undefined && typeof ctx !== "object" ? ctx : '');
     }
 
-    return tpl;
+    return ret;
 };
 
 module.exports = contextCalcultator;

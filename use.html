@@ -7,7 +7,7 @@
 <body>
     <script type="application/javascript" src="chino.js"></script>
     <script>
-        var engine = new chino();
+        var engine = new Chino();
 
         var tpl =
             '<!DOCTYPE html>'+
@@ -37,6 +37,8 @@
         var j = engine.render('auth',{mytest:'a'});
 
         console.log(j);
+
+        console.log(engine.displayNodeTree(engine._cached.get('auth')));
     </script>
 </body>
 </html>

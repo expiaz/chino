@@ -10,7 +10,6 @@ var parser = function(){
     this._tpl;
 };
 
-
 /**
  * launch parsing
  * @param tpl
@@ -66,7 +65,6 @@ parser.prototype.ForNode = function(raw){
     this.tags = [raw.tag];
     this.indexs = [raw.index];
 }
-
 
 /**
  * @class TextNode
@@ -182,7 +180,7 @@ parser.prototype.reformate = function(match){
  */
 parser.prototype.getExpressionTree = function(){
     this._stack.push(this.getNode(null,'root'));
-    var match, current_node, opening_node,
+    var match, current_node,
         reg = /<%(\w+) *(?:{{(\W)?([^}]+)}})? *(?:(\w+) *{{(\W)?(\w+)}})?%>/g;
 
     while(match = reg.exec(this._tpl)){

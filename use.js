@@ -16,5 +16,7 @@ console.log(e);
 
 var j = engine.render('auth',{mytest:'a'});
 
+engine.displayNodeTree(engine._cached.get('auth'));
+
 console.log(j);
 

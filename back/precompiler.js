@@ -26,7 +26,7 @@ precompiler.prototype.precompile = function(tpl,vars){
  * replace {{>*}} tags by their content
  */
 precompiler.prototype.makeInjections = function(){
-    var reg = /{{>(\w+)}}/g,
+    var reg = /{{>(\w+)}}/,
         match = [];
 
     while(match = reg.exec(this._tpl)){
@@ -37,6 +37,5 @@ precompiler.prototype.makeInjections = function(){
         this._tpl.replace(match[0],v == undefined ? fs.readFileSync('templates/'+match+'.chino') : v);
     }
 };
-
 
 module.exports = precompiler;
